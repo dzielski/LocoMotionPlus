@@ -10,7 +10,7 @@ import UIKit
 import CoreLocation
 import MapKit
 
-class MappingViewController: UIViewController, CLLocationManagerDelegate, MKMapViewDelegate {
+class MappingViewController: UIViewController, CLLocationManagerDelegate, MKMapViewDelegate, UIGestureRecognizerDelegate {
   
     @IBOutlet weak var theMapView: MKMapView!
     @IBOutlet weak var labelView: UILabel!
@@ -18,8 +18,9 @@ class MappingViewController: UIViewController, CLLocationManagerDelegate, MKMapV
     var manager:CLLocationManager!
     var myLocations: [CLLocation] = []
     
+    var zoomArray = [0.001, 0.01, 0.05, 0.1, 0.2, 0.5, 1.0, 10.0, 50.0, 100.0]
     
-    var zoomIndex = 2
+    var zoomIndex = 1
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -35,26 +36,11 @@ class MappingViewController: UIViewController, CLLocationManagerDelegate, MKMapV
         theMapView.delegate = self
         theMapView.mapType = MKMapType.Satellite
         theMapView.showsUserLocation = true
-    }
-    
-    @IBAction func zoomPlusTapped(sender: AnyObject) {
-        zoomIndex = zoomIndex - 1;
         
-        if zoomIndex < 0
-        {
-            zoomIndex = 0
-        }
+        let mapDragRecognizer = UIPanGestureRecognizer(target: self, action: #selector(MappingViewController.didDragMap(_:)))
+        mapDragRecognizer.delegate = self
+        self.theMapView.addGestureRecognizer(mapDragRecognizer)
     }
-    
-    @IBAction func zoomMinusTapped(sender: AnyObject) {
-        zoomIndex = zoomIndex + 1;
-        
-        if zoomIndex > 9
-        {
-            zoomIndex = 9
-        }
-    }
-    
     
     @IBAction func mapStyleTapped(sender: AnyObject) {
         if theMapView.mapType == MKMapType.Standard {
@@ -65,17 +51,27 @@ class MappingViewController: UIViewController, CLLocationManagerDelegate, MKMapV
     }
     
     
-    func locationManager(manager:CLLocationManager, didUpdateLocations locations:[CLLocation]) {
-        var zoomArray = [0.001, 0.01, 0.05, 0.1, 0.2, 0.5, 1.0, 10.0, 50.0, 100.0]
+    @IBAction func homeTapped(sender: AnyObject) {
         
+        // when home is tapped we are going to clear out locations and overlay
+        myLocations.removeAll()
+        let overlays = theMapView.overlays
+        theMapView.removeOverlays(overlays)
+        
+        manager.startUpdatingLocation();
+
+        let newRegion = MKCoordinateRegion(center: theMapView.userLocation.coordinate, span: MKCoordinateSpanMake(0.005, 0.005))
+        
+        theMapView.setRegion(newRegion, animated: true)
+    }
+    
+    
+    func locationManager(manager:CLLocationManager, didUpdateLocations locations:[CLLocation]) {
         labelView.text = "\(locations[0])"
         myLocations.append(locations[0])
         
-        let newRegion = MKCoordinateRegion(center: theMapView.userLocation.coordinate, span: MKCoordinateSpanMake(zoomArray[zoomIndex], zoomArray[zoomIndex]))
+        let newRegion = MKCoordinateRegion(center: theMapView.userLocation.coordinate, span: MKCoordinateSpanMake(0.005, 0.005))
         theMapView.setRegion(newRegion, animated: true)
-        
-//       print("Mapping data : coount=\(myLocations.count) - zoomIndex=\(zoomIndex) = zoomArray=\(zoomArray[zoomIndex])")
-        
         
         if (myLocations.count > 1){
             let sourceIndex = myLocations.count - 1
@@ -100,6 +96,20 @@ class MappingViewController: UIViewController, CLLocationManagerDelegate, MKMapV
         return MKPolylineRenderer()
     }
     
+    func gestureRecognizer(gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWithGestureRecognizer otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+        return true
+    }
+    
+    func didDragMap(gestureRecognizer: UIGestureRecognizer) {
+        if (gestureRecognizer.state == UIGestureRecognizerState.Began) {
+            manager.stopUpdatingLocation();
+//            print("Map drag began")
+        }
+        
+        if (gestureRecognizer.state == UIGestureRecognizerState.Ended) {
+//            print("Map drag ended")
+        }
+    }
     
 }
 

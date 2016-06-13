@@ -25,12 +25,10 @@ class LiveViewController: UIViewController {
   
   let dataProcessingQueue = NSOperationQueue()
   let pedometer = CMPedometer()
-//  let altimeter = CMAltimeter()
   let activityManager = CMMotionActivityManager()
   
   let lengthFormatter = NSLengthFormatter()
   
-  var altChange: Double = 0
   
   override func viewDidLoad() {
     super.viewDidLoad()
@@ -39,20 +37,7 @@ class LiveViewController: UIViewController {
     lengthFormatter.numberFormatter.maximumSignificantDigits = 2
     lengthFormatter.unitStyle = .Short
     
-/*
-    // Prepare altimeter
-    altimeter.startRelativeAltitudeUpdatesToQueue(dataProcessingQueue) {
-      (data, error) in
-      if error != nil {
-        print("There was an error obtaining altimeter data: \(error)")
-      } else {
-        dispatch_async(dispatch_get_main_queue()) {
-          self.altChange += data!.relativeAltitude as! Double
-          self.altitudeLabel.text = "\(self.lengthFormatter.stringFromMeters(self.altChange))"
-        }
-      }
-    }
-*/
+
     // Prepare pedometer
     pedometer.startPedometerUpdatesFromDate(NSDate()) {
       (data, error) in
@@ -60,7 +45,6 @@ class LiveViewController: UIViewController {
         print("There was an error obtaining pedometer data: \(error)")
       } else {
         dispatch_async(dispatch_get_main_queue()) {
-//          self.floorsLabel.text = "\(data!.floorsAscended)"
           self.stepsLabel.text = "\(data!.numberOfSteps)"
           self.distanceLabel.text = "\(self.lengthFormatter.stringFromMeters(data!.distance as! Double))"
         }
@@ -78,7 +62,7 @@ class LiveViewController: UIViewController {
         } else if data!.walking {
           self.activityImageView.image = UIImage(named: "walk")
         } else {
-          self.activityImageView.image = nil
+          self.activityImageView.image = UIImage(named: "rest")
         }
       }
     }
